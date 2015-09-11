@@ -1611,7 +1611,7 @@ int main(void)
 	 //right_side_service();
 	 //lcd_print(1,1,room_color[0],1);
 	 //lcd_print(1,3,room_color[1],1);
-	 //lcd_print(1,5,room_color[2],1);
+	 lcd_print(1,5,room_color[2],1);
 	 //lcd_print(1,7,room_color[3],1);
 	 //lcd_print(1,9,room_color[4],1);
 	 //lcd_print(1,11,room_color[5],1);
