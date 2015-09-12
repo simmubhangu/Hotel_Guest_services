@@ -1062,7 +1062,7 @@ void mapping_arena()
 		_delay_ms(500);
 	
 	}
-	}	
+	//}	
 }	
 void line_follow()
 {
