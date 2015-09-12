@@ -39,6 +39,9 @@ volatile unsigned long int color;
 long int threshold_value = 1500;
 unsigned int colour_flag;
 int room_color[8];   //array to store the color according to room
+unsigned char buffer[6];
+unsigned char Data_buffer[6];
+
 
 
 void lcd_port_config (void)
@@ -260,6 +263,15 @@ void motion_set (unsigned char Direction)
 	PortARestore |= Direction; // adding lower nibbel for forward command and restoring the PORTA status
 	PORTA = PortARestore; 		// executing the command
 }
+void uart0_init(void)
+{
+	UCSR0B = 0x00; //disable while setting baud rate
+	UCSR0A = 0x00;
+	UCSR0C = 0x06;
+	UBRR0L = 0x5F; //set baud rate lo
+	UBRR0H = 0x00; //set baud rate hi
+	UCSR0B = 0x98;
+}
 void forward (void) //both wheels forward
 {
 	motion_set(0x06);
@@ -307,6 +319,45 @@ void soft_right_degrees(unsigned int Degrees)
 	soft_right();  //Turn soft right
 	Degrees=Degrees*2;
 	angle_rotate(Degrees);
+}
+void uart0_tx_char(unsigned char data)
+{
+	while(!(UCSR0A & (1<<UDRE0)));
+	UDR0 = data;
+}
+void uart0_tx_str(const unsigned char *str)
+{
+	while(1)
+	{
+		if( *str == '\0' )		// checking for termination of string (nul char)
+		break;
+		uart0_tx_char(*str++);	//Transmit next char
+	}
+}
+void serial_print_data(const unsigned char *Data_buffer)
+{
+	uart0_tx_char(36); 									//starts new transmission with dollar
+	uart0_tx_char(44);									//comma
+	for(int j=0;j<4;j++)
+	{
+		sprintf(buffer,"%d",Data_buffer[j]);
+		uart0_tx_str((const unsigned char *)buffer);
+		uart0_tx_char(44);								//comma between each data
+	}
+	
+	uart0_tx_char(10);									//newline after end of transfer of one set of data
+	uart0_tx_char(13);									//carriage return
+}
+void send_all_data()
+{
+	
+	Data_buffer[0] = Left_white_line;
+	Data_buffer[1] = Center_white_line;
+	Data_buffer[2] = Right_white_line;
+	Data_buffer[3] = value1;
+	Data_buffer[4] = value2;
+	Data_buffer[5] = value3;
+	serial_print_data(Data_buffer);
 }
 
 void red_detect()
@@ -377,9 +428,6 @@ void left_degrees(unsigned int Degrees)
 	left(); //Turn left
 	angle_rotate(Degrees);
 }
-
-
-
 void right_degrees(unsigned int Degrees)
 {
 	// 88 pulses for 360 degrees rotation 4.090 degrees per count
@@ -395,6 +443,7 @@ void init_devices(void)
 	right_position_encoder_interrupt_init();
 	timer5_init();
 	timer1_init();
+	uart0_init();
 	adc_init();
 	sei();   // Enables the global interrupt
 }
@@ -530,12 +579,29 @@ void linear_distance_mm_follow(unsigned int DistanceInMM)
 	ShaftCountRight = 0;
 	while(1)
 	{
-		if(ShaftCountRight > ReqdShaftCountInt)
+		read_values();
+		if (Left_white_line<15&&Center_white_line<15&&Right_white_line<15)
 		{
+			for (int i=0;i<500;i++)
+			{
+				LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+				CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+				R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+				
+				soft_left();
+				velocity(200,200);
+				if(CW>=20)
+				break;
+			}
+		
+		}
+		if((ShaftCountRight > ReqdShaftCountInt)||(Left_white_line<12&&Center_white_line<12&&Right_white_line<12))
+		{
+			
 			break;
 		}
 		flag=0;
-		read_values();
+		//read_values();
 		if(Center_white_line>threshold_c)
 		{
 			flag=1;
@@ -846,19 +912,19 @@ void straight_forward()
 {
 	sharp2 = ADC_Conversion(13);
 	value2 = Sharp_GP2D12_estimation(sharp2);
-	lcd_print(1,2,value2,3);
+	//lcd_print(1,2,value2,3);
 	sharp1 = ADC_Conversion(9);						//Stores the Analog value of front sharp connected to ADC channel 11 into variable "sharp"
 	value1 = Sharp_GP2D12_estimation(sharp1);
-	lcd_print(2,6,value1,3);
+	//lcd_print(2,6,value1,3);
 	sharp3 = ADC_Conversion(11);
 	value3 = Sharp_GP2D12_estimation(sharp3);
-	lcd_print(1,10,value3,3);
-	
+	//lcd_print(1,10,value3,3);
 	read_values();
 	if ((Left_white_line>15)||(Right_white_line>15)||(Center_white_line>15))
 	{
 		green_service();
 	}
+	
 		if((value1 < 110)||(value2 < 110))
 		
 		{
@@ -880,21 +946,26 @@ void straight_forward()
 			forward ();
 			velocity(250,220);
 		}
+		read_values();
+		if ((Left_white_line>15)||(Right_white_line>15)||(Center_white_line>15))
+		{
+			stop();
+		}
 	}	
 	
 void straight_backward()
 	{
 		sharp2 = ADC_Conversion(13);
 		value2 = Sharp_GP2D12_estimation(sharp2);
-		lcd_print(1,2,value2,3);
+		//lcd_print(1,2,value2,3);
 		sharp1 = ADC_Conversion(9);						//Stores the Analog value of front sharp connected to ADC channel 11 into variable "sharp"
 		value1 = Sharp_GP2D12_estimation(sharp1);
 		//sharp3 = ADC_Conversion(11);
 		//value3 = Sharp_GP2D12_estimation(sharp3);
-		lcd_print(1,6,value1,3);
+		//lcd_print(1,6,value1,3);
 		if((value1< 250)&& (value2<250))
 		{
-			if((value1 < 115)||(value2 < 115))
+			if((value1 < 110)||(value2 < 110))
 			
 			{
 				back();
@@ -918,10 +989,8 @@ void straight_backward()
 		}
 	}
 void mapping_arena()
-{
-	while(1)
-	{
-	flag=0;
+{ 
+		flag=0;
 		while(value3 > 120 )
 	{
 		
@@ -930,46 +999,33 @@ void mapping_arena()
 			stop();
 			_delay_ms(500);
 			left_degrees(10);
-			//red_detect();
 				room_array();
-			//_delay_ms(500);
-			//led_glow();
-			//lcd_wr_command(1);
-			
 			right_degrees(10);
 			flag=flag+1;
 		}
-		
-		
-		sharp3 = ADC_Conversion(11);
-		value3 = Sharp_GP2D12_estimation(sharp3);
-		
-		//_delay_ms(100);
-		if (value3 < 120)
-		{
-	
-			break;
-		}
-		straight_forward();
+			straight_forward();
+			sharp3 = ADC_Conversion(11);
+			value3 = Sharp_GP2D12_estimation(sharp3);
 		
 	}
-	//lcd_wr_command(1);
 	if(flag==1)
 	{
 		stop();
 		_delay_ms(100);
 		left_degrees(10);
 		room_array();
-		
-		//red_detect();
-		//_delay_ms(500);
-		//led_glow();
 		right_degrees(10);
 		flag=flag+1;
 		
 	}
 	
-	straight_backward();
+		while((value1<500)||(value2<500))
+		straight_backward();
+// 		sharp2 = ADC_Conversion(13);
+// 		value2 = Sharp_GP2D12_estimation(sharp2);
+// 		sharp1 = ADC_Conversion(9);						//Stores the Analog value of front sharp connected to ADC channel 11 into variable "sharp"
+// 		value1 = Sharp_GP2D12_estimation(sharp1);
+		
 	if((value1>500)||(value2>500))//&&(flag==3))
 	{
 		stop();
@@ -981,7 +1037,7 @@ void mapping_arena()
 			line_follow_backward();
 			
 		}*/
-		back_mm(90);
+		back_mm(40);
 		_delay_ms(100);
 		right_degrees(80);
 		for (int i=0;i<4000;i++)
@@ -998,14 +1054,15 @@ void mapping_arena()
 		_delay_ms(100);
 		forward_mm_follow(200);
 		_delay_ms(100);
-		for(int i=0;i<5;i++)
+		for(int i=0;i<2;i++)
 		{
 			sharp3 = ADC_Conversion(11);
 			value3 = Sharp_GP2D12_estimation(sharp3);
 		}
 		_delay_ms(500);
+	
 	}
-	}
+	}	
 }	
 void line_follow()
 {
@@ -1018,6 +1075,7 @@ void line_follow()
 		{
 			forward_mm(10);
 			count+=1;
+			lcd_print(1,1,count,2);
 			break;
 		}
 		if(Center_white_line>threshold_c)
@@ -1747,7 +1805,7 @@ int main(void)
     lcd_init();
 	RGB_LED_config();
 	color_sensor_scaling();
-	for(int i=0;i<=20;i++)
+	for(int i=0;i<=2;i++)
 	{
 		sharp3 = ADC_Conversion(11);
 		value3 = Sharp_GP2D12_estimation(sharp3);
@@ -1762,14 +1820,21 @@ int main(void)
 	Right_white_line = ADC_Conversion(1);	//Getting data of Right WL Sensor
 	sharp2 = ADC_Conversion(13);
 	value2 = Sharp_GP2D12_estimation(sharp2);
-	lcd_print(1,2,value2,3);
+	//lcd_print(1,2,value2,3);
 	sharp1 = ADC_Conversion(9);						//Stores the Analog value of front sharp connected to ADC channel 11 into variable "sharp"
 	value1 = Sharp_GP2D12_estimation(sharp1);
 	
-	mapping_arena();
+	for (int i=0;i<4;i++)
+	{
+		//mapping_arena();
+	}
+		
+
 	//inside_room();
 	//green_service();
-	forward_mm_follow(50);
+	//forward_mm_follow(250);
+	//stop();
+	//_delay_ms(1000);
 	//left_degrees(30);
       //line_follow_forward();
 	  //line_follow_backward();
