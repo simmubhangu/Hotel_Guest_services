@@ -444,7 +444,7 @@ void red_read(void) // function to select red filter and display the count gener
 	filter_red(); //select red filter
 	pulse=0; //reset the count to 0
 	_delay_ms(100); //capture the pulses for 100 ms or 0.1 second
-	red = (pulse-1500);  //store the count in variable called red
+	red = (pulse-1200);  //store the count in variable called red
 	
 	/*lcd_cursor(1,1);  //set the cursor on row 1, column 1
 	lcd_string("Red Pulses"); // Display "Red Pulses" on LCD
@@ -854,14 +854,11 @@ void straight_forward()
 	value3 = Sharp_GP2D12_estimation(sharp3);
 	lcd_print(1,10,value3,3);
 	
-	/*read_values();
+	read_values();
 	if ((Left_white_line>15)||(Right_white_line>15)||(Center_white_line>15))
 	{
-		right_side_service();
-	}*/
-		
-	if((value1< 300) && (value2<300))
-	{
+		green_service();
+	}
 		if((value1 < 110)||(value2 < 110))
 		
 		{
@@ -883,8 +880,7 @@ void straight_forward()
 			forward ();
 			velocity(250,220);
 		}
-	}
-}	
+	}	
 	
 void straight_backward()
 	{
@@ -898,7 +894,7 @@ void straight_backward()
 		lcd_print(1,6,value1,3);
 		if((value1< 250)&& (value2<250))
 		{
-			if((value1 < 110)||(value2 < 110))
+			if((value1 < 115)||(value2 < 115))
 			
 			{
 				back();
@@ -923,6 +919,8 @@ void straight_backward()
 	}
 void mapping_arena()
 {
+	while(1)
+	{
 	flag=0;
 		while(value3 > 120 )
 	{
@@ -931,14 +929,14 @@ void mapping_arena()
 		{
 			stop();
 			_delay_ms(500);
-			left_degrees(20);
+			left_degrees(10);
 			//red_detect();
 				room_array();
 			//_delay_ms(500);
 			//led_glow();
 			//lcd_wr_command(1);
 			
-			right_degrees(20);
+			right_degrees(10);
 			flag=flag+1;
 		}
 		
@@ -960,13 +958,13 @@ void mapping_arena()
 	{
 		stop();
 		_delay_ms(100);
-		left_degrees(15);
+		left_degrees(10);
 		room_array();
 		
 		//red_detect();
 		//_delay_ms(500);
 		//led_glow();
-		right_degrees(15);
+		right_degrees(10);
 		flag=flag+1;
 		
 	}
@@ -985,7 +983,18 @@ void mapping_arena()
 		}*/
 		back_mm(90);
 		_delay_ms(100);
-		right_90;
+		right_degrees(80);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			right();
+			velocity(200,200);
+			if(CW>=20)
+			break;
+		}
 		_delay_ms(100);
 		forward_mm_follow(200);
 		_delay_ms(100);
@@ -996,7 +1005,7 @@ void mapping_arena()
 		}
 		_delay_ms(500);
 	}
-
+	}
 }	
 void line_follow()
 {
@@ -1006,7 +1015,11 @@ void line_follow()
 		flag=0;
 		read_values();
 		if((Center_white_line>50 && Left_white_line>50) || (Center_white_line>50 && Right_white_line>50 ))
-		break;
+		{
+			forward_mm(10);
+			count+=1;
+			break;
+		}
 		if(Center_white_line>threshold_c)
 		{
 			flag=1;
@@ -1030,7 +1043,6 @@ void line_follow()
 		forward();
 	}
 	stop();
-	forward_mm_follow(90);
 }
 	void right_side_service()
 	{
@@ -1048,7 +1060,7 @@ void line_follow()
 		 forward_mm(50);
 		 stop();
 		 _delay_ms(100);
-		 right_90;
+		 right_degrees(90);
 		 /*for (int i=0;i<4000;i++)
 		 {
 			 LW = ADC_Conversion(3); //Getting data of Left WL Sensor
@@ -1448,6 +1460,155 @@ if(count==16)
 		}
 }
 }
+void green_service()
+{
+	if(count==0)
+	{
+		read_values();
+		line_follow();
+	}
+	 if(count==1)
+	 {
+		 forward_mm(50);
+		 stop();
+		 _delay_ms(100);
+		 right_degrees(80);
+		 for (int i=0;i<4000;i++)
+		 {
+			 LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			 CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			 R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			 
+			 right();
+			 velocity(200,200);
+			 if(CW>=20)
+			 break;
+		 }
+		 //back_mm(30);
+		 line_follow();
+	 }			
+	 if(count==2)
+	 {
+		 forward_mm(60);
+		 stop();
+		 _delay_ms(100);
+		 left_degrees(85);
+		 for (int i=0;i<4000;i++)
+		 {
+			 LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			 CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			 R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			 
+			 left();
+			 velocity(200,200);
+			 if(CW>=20)
+			 break;
+		 }
+		 //back_mm(30);
+		 line_follow();
+	 }
+	 if(count==3)
+	 {
+		 forward_mm(50);
+		 stop();
+		 _delay_ms(100);
+		 right_degrees(70);
+		 for (int i=0;i<4000;i++)
+		 {
+			 LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			 CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			 R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			 
+			 right();
+			 velocity(200,200);
+			 if(CW>=20)
+			 break;
+		 }
+		 //back_mm(30);
+		 forward_mm_follow(120);
+		 //green_detect();
+		 left_degrees(170);
+		 for (int i=0;i<4000;i++)
+		 {
+			 LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			 CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			 R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			 
+			 left();
+			 velocity(200,200);
+			 if(CW>=20)
+			 break;
+		 }
+		 line_follow();
+		 
+	 }
+	 if(count==4)
+	 {
+		 forward_mm(50);
+		 stop();
+		 _delay_ms(100);
+		 left_degrees(40);
+		 for (int i=0;i<4000;i++)
+		 {
+			 LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			 CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			 R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			 
+			 left();
+			 velocity(200,200);
+			 if(CW>=20)
+			 break;
+		 }
+		 //back_mm(30);
+		 line_follow();
+	 }
+	 if(count==5)
+	 {
+		 forward_mm(50);
+		 stop();
+		 _delay_ms(100);
+		 right_degrees(60);
+		 for (int i=0;i<4000;i++)
+		 {
+			 LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			 CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			 R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			 
+			 right();
+			 velocity(200,200);
+			 if(CW>=20)
+			 break;
+		 }
+		 //back_mm(30);
+		 //forward_mm(50);
+		 line_follow();
+	 }
+	 if(count==6)
+	 {
+		 forward_mm(50);
+		 stop();
+		 _delay_ms(100);
+		 left_degrees(80);
+		 for (int i=0;i<4000;i++)
+		 {
+			 LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			 CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			 R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			 
+			 left();
+			 velocity(200,200);
+			 if(CW>=20)
+			 break;
+		 }
+		 line_follow();
+	 }		 
+	 if (count==7)
+	 {
+		 //forward_mm(50);
+		 stop();
+		 
+	 }
+}
 void grab()
 {
 	for (int i = 10; i<=180; i++)
@@ -1606,12 +1767,16 @@ int main(void)
 	value1 = Sharp_GP2D12_estimation(sharp1);
 	
 	mapping_arena();
+	//inside_room();
+	//green_service();
+	forward_mm_follow(50);
+	//left_degrees(30);
       //line_follow_forward();
 	  //line_follow_backward();
 	 //right_side_service();
 	 //lcd_print(1,1,room_color[0],1);
 	 //lcd_print(1,3,room_color[1],1);
-	 lcd_print(1,5,room_color[2],1);
+	 //lcd_print(1,5,room_color[2],1);
 	 //lcd_print(1,7,room_color[3],1);
 	 //lcd_print(1,9,room_color[4],1);
 	 //lcd_print(1,11,room_color[5],1);
