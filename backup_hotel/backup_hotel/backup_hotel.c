@@ -41,7 +41,8 @@ unsigned int colour_flag;
 int room_color[8];   //array to store the color according to room
 unsigned char buffer[6];
 unsigned char Data_buffer[6];
-
+unsigned char vip_room=0;
+unsigned char service_to_vip=0;
 
 
 void lcd_port_config (void)
@@ -989,6 +990,7 @@ void mapping_arena()
 		{
 			stop();
 			_delay_ms(500);
+			forward_mm(10);
 			left_degrees(10);
 				room_array();
 			right_degrees(10);
@@ -1019,7 +1021,7 @@ void mapping_arena()
 // 		sharp1 = ADC_Conversion(9);						//Stores the Analog value of front sharp connected to ADC channel 11 into variable "sharp"
 // 		value1 = Sharp_GP2D12_estimation(sharp1);
 		
-	if((value1>500)||(value2>500))//&&(flag==3))
+	if((value1>400)||(value2>400))//&&(flag==3))
 	{
 		stop();
 		_delay_ms(100);
@@ -1662,6 +1664,155 @@ void green_service()
 		 
 	 }
 }
+void blue_service()
+{
+	if(count==0)
+	{
+		read_values();
+		line_follow();
+	}
+	if(count==1)
+	{
+		forward_mm(50);
+		stop();
+		_delay_ms(100);
+		left_degrees(80);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			left();
+			velocity(200,200);
+			if(CW>=20)
+			break;
+		}
+		//back_mm(30);
+		line_follow();
+	}
+	if(count==2)
+	{
+		forward_mm(60);
+		stop();
+		_delay_ms(100);
+		left_degrees(85);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			left();
+			velocity(200,200);
+			if(CW>=20)
+			break;
+		}
+		//back_mm(30);
+		line_follow();
+	}
+	if(count==3)
+	{
+		forward_mm(50);
+		stop();
+		_delay_ms(100);
+		right_degrees(70);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			right();
+			velocity(200,200);
+			if(CW>=20)
+			break;
+		}
+		//back_mm(30);
+		forward_mm_follow(120);
+		//green_detect();
+		left_degrees(170);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			left();
+			velocity(200,200);
+			if(CW>=20)
+			break;
+		}
+		line_follow();
+		
+	}
+	if(count==4)
+	{
+		forward_mm(50);
+		stop();
+		_delay_ms(100);
+		left_degrees(40);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			left();
+			velocity(200,200);
+			if(CW>=20)
+			break;
+		}
+		//back_mm(30);
+		line_follow();
+	}
+	if(count==5)
+	{
+		forward_mm(50);
+		stop();
+		_delay_ms(100);
+		right_degrees(60);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			right();
+			velocity(200,200);
+			if(CW>=20)
+			break;
+		}
+		//back_mm(30);
+		//forward_mm(50);
+		line_follow();
+	}
+	if(count==6)
+	{
+		forward_mm(50);
+		stop();
+		_delay_ms(100);
+		right_degrees(80);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			right();
+			velocity(200,200);
+			if(CW>=20)
+			break;
+		}
+		line_follow();
+	}
+	if (count==7)
+	{
+		//forward_mm(50);
+		stop();
+		
+	}
+}
 void red_service(void)
 {
 	if(count==0)
@@ -1989,6 +2140,17 @@ void inside_room()
 		 
 	 }
 }
+void vip_room_number()
+{
+	for (int i=0;i<3;i++)
+	{
+		if (room_color[2*i]==room_color[((2*i)+1)])
+		{
+			vip_room=i;
+			service_to_vip=room_color[2*i];
+		}
+	}
+}
 int main(void)
 {
     init_devices();
@@ -2057,10 +2219,47 @@ int main(void)
 	//red_detect();
 	
 // 	blue_detect();
-	
-	if((room_color[2]==1)&&room_color[3]==1)
+	vip_room_number();
+	_delay_ms(100);
+	if(vip_room==1)
 	{
 		red_service();
+		goto_room();
+	}	
+	if(vip_room==0)
+	{
+		green_service();
+		forward_mm(50);
+		right_degrees(70);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			right();
+			velocity(200,200);
+			if(R_W>=20)
+			break;
+		}
+		goto_room();
+	}
+	if(vip_room==2)
+	{
+		blue_service();
+		forward_mm(50);
+		left_degrees(70);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			left();
+			velocity(200,200);
+			if(R_W>=20)
+			break;
+		}
 		goto_room();
 	}
 //line_follow();
