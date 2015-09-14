@@ -921,7 +921,7 @@ void straight_forward()
 	//lcd_print(1,10,value3,3);
 
 	
-		if((value1 < 110)||(value2 < 110))
+		if((value1 < 115)||(value2 < 115))
 		
 		{
 		forward();
@@ -1662,7 +1662,7 @@ void green_service()
 		 
 	 }
 }
-void red_service()
+void red_service(void)
 {
 	if(count==0)
 	{
@@ -1806,26 +1806,27 @@ void red_service()
 	}
 	if (count==7)
 	{
-		//forward_mm(50);
+		forward_mm(50);
+		return;
 		stop();
 		
 	}
 }
 void goto_room()
 {
-	//forward_mm_follow(250);
-	sharp3 = ADC_Conversion(11);
-	value3 = Sharp_GP2D12_estimation(sharp3);
-	if (value3<300)
-	{
-		soft_left_degrees(100);
-		inside_room();
-	}
-	else
-	{
-		straight_forward();
-	}
 	
+	
+	forward_mm_follow(250);
+	while(value3>300)
+	{
+		sharp3 = ADC_Conversion(11);
+		value3 = Sharp_GP2D12_estimation(sharp3);
+		straight_forward();
+		
+	}
+	soft_left_degrees(100);
+	forward_mm(100);
+	inside_room();
 }
 void finding_line()
 {
@@ -1896,6 +1897,7 @@ void release()
 }			
 void inside_room()
 {
+	count=0;
 	 if(count==0)
 	 {
 		 read_values();
@@ -2001,9 +2003,9 @@ int main(void)
 		value3 = Sharp_GP2D12_estimation(sharp3);
 	}
 	forward_mm_follow(250);
- 	while(1)
-     {
-		
+//  	while(1)
+//      {
+// 		
 		//red_detect();
 	Left_white_line = ADC_Conversion(3);	//Getting data of Left WL Sensor
 	Center_white_line = ADC_Conversion(2);	//Getting data of Center WL Sensor
@@ -2014,46 +2016,53 @@ int main(void)
 	sharp1 = ADC_Conversion(9);						//Stores the Analog value of front sharp connected to ADC channel 11 into variable "sharp"
 	value1 = Sharp_GP2D12_estimation(sharp1);
 	//color_detection();	
-// 	for (int i=0;i<4;i++)
-// 	{
-// 		if(i==3)
-// 		{
-// 			flag=0;
-// 			read_values();
-// 			while((Left_white_line<15)||(Right_white_line<15)||(Center_white_line<15)) 
-// 			{
-// 				
-// 				if (flag==0)
-// 				{
-// 					forward_mm(50);
-// 					stop();
-// 					_delay_ms(500);
-// 					//left_degrees(10);
-// 					room_array();
-// 					//right_degrees(10);
-// 					flag=flag+1;
-// 				}
-// 				straight_forward();
-// 				read_values();
-// 				if((Left_white_line>15)||(Right_white_line>15)||(Center_white_line>15))
-// 				break;
-// 			}
-// 			
-// 		}			
-// 			else
-// 			{
-// 				//mapping_arena();
-// 			}
-// 		}
+	for (int i=0;i<4;i++)
+	{
+		if(i==3)
+		{
+			flag=0;
+			read_values();
+			while((Left_white_line<15)||(Right_white_line<15)||(Center_white_line<15)) 
+			{
+				
+				if (flag==0)
+				{
+					//forward_mm(50);
+					stop();
+					//_delay_ms(500);
+					left_degrees(10);
+					room_array();
+					right_degrees(10);
+					flag=flag+1;
+				}
+				straight_forward();
+				read_values();
+				if((Left_white_line>15)||(Right_white_line>15)||(Center_white_line>15))
+				break;
+			}
+			
+		}			
+			else
+			{
+				mapping_arena();
+			}
+		}
 	
 	
 	//goto_room();
-	finding_line();	
+	//finding_line();	
 // 	mapping_arena();
 // 	read_values();
 //forward_mm(20);
 	//red_detect();
-	//red_service();
+	
+// 	blue_detect();
+	
+	if((room_color[2]==1)&&room_color[3]==1)
+	{
+		red_service();
+		goto_room();
+	}
 //line_follow();
 //red_service();
 	//mapping_arena();
@@ -2066,6 +2075,6 @@ int main(void)
       //line_follow_forward();
 	  //line_follow_backward();
 	 //right_side_service();
-}	
+//}	
 			
 		 }
