@@ -1060,7 +1060,109 @@ void mapping_arena()
 	}
 		
 
+}
+
+void line_follow_sense()
+{
+	//dynamic();
+	while(1)
+	{
+		
+		flag=0;
+		read_values();
+		sharp3 = ADC_Conversion(11);
+		value3 = Sharp_GP2D12_estimation(sharp3);
+		if((Center_white_line>50 && Left_white_line>50) || (Center_white_line>50 && Right_white_line>50 ) || (value3 <180))
+		{
+			forward_mm(10);
+			count+=1;
+			lcd_print(1,1,count,2);
+			break;
+		}
+		if(Center_white_line>threshold_c)
+		{
+			flag=1;
+			forward();
+		}
+		if(Left_white_line>threshold_l && flag == 0)
+		{
+			flag=1;
+			left();
+			while(Center_white_line<threshold_c)
+			Center_white_line=ADC_Conversion(2);
+		}
+		if(Right_white_line>threshold_r && flag == 0)
+		{
+			flag=1;
+			right();
+			while(Center_white_line<threshold_c)
+			Center_white_line=ADC_Conversion(2);
+		}
+		else
+		forward();
+	}
+	stop();
 }	
+
+void line_follow_find()
+{
+	//dynamic();
+	while(1)
+	{
+		flag=0;
+		read_values();
+		sharp2 = ADC_Conversion(13);
+		value2 = Sharp_GP2D12_estimation(sharp3);
+		sharp3 = ADC_Conversion(9);
+		value3 = Sharp_GP2D12_estimation(sharp3);
+		if (value3 <200)
+		{
+			soft_left();
+		}
+		if (value3 <300 && value3 > 200)
+		{
+			soft_right();
+		}
+		if (value2 <200)
+		{
+			soft_left();
+		}
+		if (value2 <300 && value2 > 200)
+		{
+			soft_right();
+		}
+		if((Center_white_line>50 && Left_white_line>50) || (Center_white_line>50 && Right_white_line>50 ))
+		{
+			forward_mm(10);
+			count+=1;
+			lcd_print(1,1,count,2);
+			break;
+		}
+		
+		if(Center_white_line>threshold_c)
+		{
+			flag=1;
+			forward();
+		}
+		if(Left_white_line>threshold_l && flag == 0)
+		{
+			flag=1;
+			left();
+			while(Center_white_line<threshold_c)
+			Center_white_line=ADC_Conversion(2);
+		}
+		if(Right_white_line>threshold_r && flag == 0)
+		{
+			flag=1;
+			right();
+			while(Center_white_line<threshold_c)
+			Center_white_line=ADC_Conversion(2);
+		}
+		else
+		forward();
+	}
+	stop();
+}
 void line_follow()
 {
 	//dynamic();
@@ -1581,7 +1683,7 @@ void green_service()
 		 }
 		 //back_mm(30);
 		 forward_mm_follow(120);
-		 //green_detect();
+		 grab();
 		 left_degrees(170);
 		 for (int i=0;i<4000;i++)
 		 {
@@ -1730,7 +1832,7 @@ void blue_service()
 		}
 		//back_mm(30);
 		forward_mm_follow(120);
-		//green_detect();
+		grab();
 		left_degrees(170);
 		for (int i=0;i<4000;i++)
 		{
@@ -1879,7 +1981,7 @@ void red_service(void)
 		}
 		//back_mm(30);
 		forward_mm_follow(120);
-		//green_detect();
+		grab();
 		right_degrees(170);
 		for (int i=0;i<4000;i++)
 		{
@@ -1978,6 +2080,8 @@ void goto_room()
 	soft_left_degrees(100);
 	forward_mm(100);
 	inside_room();
+	line_follow_find();
+	
 }
 void finding_line()
 {
@@ -2014,17 +2118,17 @@ void grab()
 	for (int i = 10; i<=180; i++)
 	{
 		servo_2(i);
-		_delay_ms(30);
+		_delay_ms(10);
 	}
 	for (int i = 120; i<=160; i++)
 	{
 		servo_1(i);
-		_delay_ms(30);
+		_delay_ms(10);
 	}
 	for ( int i = 180; i>=10; i--)
 	{
 		servo_2(i);
-		_delay_ms(30);		
+		_delay_ms(10);		
 	}
 }
 void release()
@@ -2032,23 +2136,23 @@ void release()
 	for (int p = 90; p<=180; p++)
 	{
 		servo_2(p);
-		_delay_ms(30);
+		_delay_ms(10);
 	}
 	for (int p = 160;p>=120; p--)
 	{
 		servo_1(p);
-		_delay_ms(30);	
+		_delay_ms(10);	
 	}
 
 	for ( int p = 180; p>=90; p--)
 	{
 		servo_2(p);
-		_delay_ms(30);		
+		_delay_ms(10);		
 	}
 }			
 void inside_room()
 {
-	count=0;
+	  count=0;
 	 if(count==0)
 	 {
 		 read_values();
@@ -2059,7 +2163,7 @@ void inside_room()
 		 forward_mm(50);
 		 stop();
 		 _delay_ms(100);
-		 right_degrees(90);
+		 right_degrees(80);
 		 for (int i=0;i<4000;i++)
 		 {
 			 LW = ADC_Conversion(3); //Getting data of Left WL Sensor
@@ -2067,13 +2171,13 @@ void inside_room()
 			 R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
 			 
 			 right();
-			 velocity(200,200);
+			 velocity(150,150);
 			 if(CW>=20)
 			 break;
 		 }
 		 //back_mm(30);
-		 //forward_mm(60);
-		 for (int i=0;i<40;i++)
+		 forward_mm_follow(20);
+		 for (int i=0;i<5;i++)
 		 {
 			 sharp3 = ADC_Conversion(11);
 			 value3 = Sharp_GP2D12_estimation(sharp3);
@@ -2088,7 +2192,7 @@ void inside_room()
 			 forward_mm_follow(30);
 			 release();
 		 }
-		 back_mm(10);
+		 back_mm(20);
 		 left_degrees(170);
 		 for (int i=0;i<4000;i++)
 		 {
@@ -2104,8 +2208,8 @@ void inside_room()
 		 
 		 stop();
 		 _delay_ms(100);
-		 //forward_mm(120);
-		 for (int i=0;i<40;i++)
+		 forward_mm_follow(40);
+		 for (int i=0;i<5;i++)
 		 {
 			 sharp3 = ADC_Conversion(11);
 			 value3 = Sharp_GP2D12_estimation(sharp3);
@@ -2114,7 +2218,7 @@ void inside_room()
 		 {
 			 forward_mm_follow(30);
 			 grab();
-			 back_mm(30);
+			 back_mm(50);
 		 }
 		 left_degrees(70);
 		 for (int i=0;i<4000;i++)
@@ -2128,19 +2232,14 @@ void inside_room()
 			 if(R_W>=20)
 			 break;
 		 }
-		 line_follow();
+		 line_follow_sense();
+		
 	 }
-
-	 if(count==2)
-	 {
-		 forward_mm(50);
-		 stop();
-		 _delay_ms(100);
-		 line_follow();
-		 
-	 }
+		
+			 right_degrees(90);
+	 			 
 }
-void vip_room_number()
+unsigned char vip_room_number(void)
 {
 	for (int i=0;i<3;i++)
 	{
@@ -2150,6 +2249,8 @@ void vip_room_number()
 			service_to_vip=room_color[2*i];
 		}
 	}
+	lcd_print(1,1,vip_room,2);
+	return vip_room;
 }
 int main(void)
 {
@@ -2219,34 +2320,16 @@ int main(void)
 	//red_detect();
 	
 // 	blue_detect();
-	vip_room_number();
+	unsigned char vip_room_set=vip_room_number();
 	_delay_ms(100);
-	if(vip_room==1)
+	if(vip_room_set==1)
 	{
 		red_service();
 		goto_room();
 	}	
-	if(vip_room==0)
+	if(vip_room_set==0)
 	{
 		green_service();
-		forward_mm(50);
-		right_degrees(70);
-		for (int i=0;i<4000;i++)
-		{
-			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
-			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
-			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
-			
-			right();
-			velocity(200,200);
-			if(R_W>=20)
-			break;
-		}
-		goto_room();
-	}
-	if(vip_room==2)
-	{
-		blue_service();
 		forward_mm(50);
 		left_degrees(70);
 		for (int i=0;i<4000;i++)
@@ -2256,6 +2339,24 @@ int main(void)
 			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
 			
 			left();
+			velocity(200,200);
+			if(R_W>=20)
+			break;
+		}
+		goto_room();
+	}
+	if(vip_room_set==2)
+	{
+		blue_service();
+		forward_mm(50);
+		right_degrees(70);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			right();
 			velocity(200,200);
 			if(R_W>=20)
 			break;
@@ -2275,5 +2376,6 @@ int main(void)
 	  //line_follow_backward();
 	 //right_side_service();
 //}	
+	}
 			
-		 }
+		 
