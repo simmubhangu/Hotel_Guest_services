@@ -2252,6 +2252,21 @@ unsigned char vip_room_number(void)
 	lcd_print(1,1,vip_room,2);
 	return vip_room;
 }
+void service_given()
+{
+	if (((room_color[0]==1)&&(room_color[1]==1)) || ((room_color[2]==1)&&(room_color[4]==1)) || ((room_color[2]==1)&&(room_color[4]==1)))
+	{
+		red_service();
+	}
+	if (((room_color[0]==2)&&(room_color[1]==2)) || ((room_color[2]==2)&&(room_color[4]==2)) || ((room_color[2]==2)&&(room_color[4]==2)))
+	{
+		blue_service();
+	}
+	if (((room_color[0]==3)&&(room_color[1]==3)) || ((room_color[2]==3)&&(room_color[4]==3)) || ((room_color[2]==3)&&(room_color[4]==3)))
+	{
+		green_service();
+	}
+}
 int main(void)
 {
     init_devices();
@@ -2324,12 +2339,12 @@ int main(void)
 	_delay_ms(100);
 	if(vip_room_set==1)
 	{
-		red_service();
+		service_given();
 		goto_room();
 	}	
 	if(vip_room_set==0)
 	{
-		green_service();
+		service_given();
 		forward_mm(50);
 		left_degrees(70);
 		for (int i=0;i<4000;i++)
@@ -2347,7 +2362,7 @@ int main(void)
 	}
 	if(vip_room_set==2)
 	{
-		blue_service();
+		service_given();
 		forward_mm(50);
 		right_degrees(70);
 		for (int i=0;i<4000;i++)
