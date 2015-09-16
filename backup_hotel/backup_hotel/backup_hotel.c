@@ -555,7 +555,7 @@ unsigned int color_detection()
 		else                     
 		a=3;                     // when color_detected is equals to red x=3 (3 for blue)
 	}
-	else if((red<1200)&&(blue<1200)&&(green<1200))
+	else if((red<1000)||(blue<1000)||(green<1000))
 	{                        // condition when color is smaller 
 	a=4; 
 	}                       // when value of color is less than threshold value  x=4 (4 for black)
@@ -887,7 +887,7 @@ void led_glow(unsigned int s)
 		_delay_ms(100);
 		p=p+1;
 	}
-	else if(p==1)
+	else if((room_color[s]==4)&&(p==1))
 	{
 		PORTJ=0x07;
 	}
@@ -991,7 +991,7 @@ void mapping_arena()
 			stop();
 			_delay_ms(500);
 			forward_mm(10);
-			left_degrees(10);
+			left_degrees(15);
 				room_array();
 			right_degrees(10);
 			flag=flag+1;
