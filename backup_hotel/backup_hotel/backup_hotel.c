@@ -18,14 +18,14 @@ unsigned int value2;
 unsigned int value3;
 unsigned char sharp1;
 unsigned char sharp2;
-unsigned char sharp3;
+unsigned char sharp3,x=0;
 unsigned char ADC_Conversion(unsigned char);
 unsigned char ADC_Value;
 unsigned char flag = 0;
 unsigned char Left_white_line = 0;
 unsigned char Center_white_line = 0;
 unsigned char Right_white_line = 0;
-int a=0;
+int a=0,rst;
 int s=0,garbage=0;
 unsigned char LW = 0;
 unsigned char CW = 0;
@@ -1633,11 +1633,19 @@ if(count==16)
 }
 void green_service()
 {
+	x=1;
 	if(count==0)
 	{
 		read_values();
 		line_follow();
 	}
+	if (garbage == 1)
+	{
+		place_garbage();
+		count=3;
+	}
+	else
+	{
 	 if(count==1)
 	 {
 		 forward_mm(50);
@@ -1657,7 +1665,8 @@ void green_service()
 		 }
 		 //back_mm(30);
 		 line_follow();
-	 }			
+	 }	
+	 	 		
 	 if(count==2)
 	 {
 		 forward_mm(60);
@@ -1678,6 +1687,7 @@ void green_service()
 		 //back_mm(30);
 		 line_follow();
 	 }
+	 }	 
 	 if(count==3)
 	 {
 		 forward_mm(50);
@@ -1782,11 +1792,20 @@ void green_service()
 }
 void blue_service()
 {
+	x=0;
 	if(count==0)
 	{
 		read_values();
 		line_follow();
 	}
+	
+	if (garbage == 1)
+	{
+		place_garbage();
+		count=2;
+	}
+	else
+	{
 	if(count==1)
 	{
 		forward_mm(50);
@@ -1807,6 +1826,7 @@ void blue_service()
 		//back_mm(30);
 		line_follow();
 	}
+	}	
 	if(count==2)
 	{
 		forward_mm(60);
@@ -1931,12 +1951,19 @@ void blue_service()
 }
 void red_service(void)
 {
+	x=0;
 	if(count==0)
 	{
 		read_values();
 		line_follow();
-	}	
-	if(count==1)
+	}
+	if (garbage ==1)
+	{
+		place_garbage();
+		count=2;
+	}
+	else	
+	{if(count==1)
 	{
 		forward_mm(50);
 		stop();
@@ -1956,6 +1983,7 @@ void red_service(void)
 		//back_mm(30);
 		line_follow();
 	}
+	}	
 	if(count==2)
 	{
 		forward_mm(60);
@@ -2209,6 +2237,7 @@ void inside_room()
 		 {
 			 forward_mm_follow(30);
 			 grab();
+			 garbage=1;
 			 back_mm(50);
 		 }
 		 left_degrees(70);
@@ -2258,14 +2287,24 @@ void service_given()
 		green_service();
 	}
 }
+void service_given_others()
+{
+	if (((room_color[0]==1)||(room_color[1]==1)) || ((room_color[2]==1)||(room_color[3]==1)) || ((room_color[4]==1)||(room_color[5]==1)))
+	{
+		red_service();
+	}
+	else if (((room_color[0]==2)||(room_color[1]==2)) || ((room_color[2]==2)||(room_color[3]==2)) || ((room_color[4]==2)||(room_color[5]==2)))
+	{
+		blue_service();
+	}
+	else if (((room_color[0]==3)||(room_color[1]==3)) || ((room_color[2]==3)||(room_color[3]==3)) || ((room_color[4]==3)||(room_color[5]==3)))
+	{
+		green_service();
+	}
+}
 void place_garbage()
 {
-	
-	if(count==0)
-	{
-		read_values();
-		line_follow();
-	}
+	count=1;
 	if(count==1)
 	{
 		forward_mm(50);
@@ -2278,7 +2317,7 @@ void place_garbage()
 			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
 			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
 			
-			left();
+			right();
 			velocity(200,200);
 			if(CW>=20)
 			break;
@@ -2361,7 +2400,9 @@ void place_garbage()
 		//back_mm(30);
 		line_follow();
 	}
-	if(count==5)
+	if(x==0)
+	{
+		if(count==5)
 	{
 		forward_mm(50);
 		stop();
@@ -2382,12 +2423,17 @@ void place_garbage()
 		//forward_mm(50);
 		line_follow();
 	}
+	}
+	else
+	count=6;	
 	if(count==6)
 	{
-		forward_mm(50);
+		forward_mm_follow(50);
+		line_follow();
 		stop();
 		
 	}
+	garbage=0;
 	
 }
 void after_mapping()
@@ -2440,35 +2486,120 @@ void after_mapping()
 		left_90();
 	}
 }
+
+void service_given_others1()
+{
+	int ag;
+	if (room_color[2*vb[rst]] == 4)
+	{
+		ag= room_color[2*vb[rst]+1];
+	}
+	else
+	ag= room_color[2*vb[rst]];
+	lcd_init();
+	lcd_print(1,1,ag,1);
+	switch (ag)
+	{
+		case 1: red_service();
+				break;
+		case 2: blue_service();
+				break;
+		case 3: green_service();
+				break;
+		
+	}
+	
+}
+void after_vip_service()
+{
+	//unsigned char vip_room_set=vip_room_number();
+	//_delay_ms(100);
+	for(rst=0;rst<=3;rst++)
+	{
+	if(vb[rst]==1)
+	{
+		service_given_others1();
+		goto_room();
+		next_box();
+	}
+	if(vb[rst]==0)
+	{
+		service_given_others1();
+		forward_mm(50);
+		left_degrees(70);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			left();
+			velocity(200,200);
+			if(R_W>=20)
+			break;
+		}
+		goto_room();
+		forward_mm_follow(70);
+		right_90();
+		next_box();
+	}
+	if(vb[rst]==2)
+	{
+		service_given_others1();
+		forward_mm(50);
+		right_degrees(70);
+		for (int i=0;i<4000;i++)
+		{
+			LW = ADC_Conversion(3); //Getting data of Left WL Sensor
+			CW = ADC_Conversion(2); //Getting data of Center WL Sensor
+			R_W = ADC_Conversion(1); //Getting data of Right WL Sensor
+			
+			right();
+			velocity(200,200);
+			if(R_W>=20)
+			break;
+		}
+		goto_room();
+		forward_mm_follow(70);
+		left_90();
+		next_box();
+	}
+	}	
+}
 void array_form()
 {
-	vb[0]=vip_room_set;
+	vb[0]=vip_room_number();
+	index=1;
 	for(ir=0;ir<4;ir++)
 	{
-		if(ir==vip_room_set)
+		if(ir==vb[0])
 		continue;
 		vb[index]=ir;
 		index++;
 	}
-	index=0;
+	
+	lcd_print(2,1,vb[0],1);
+	lcd_print(2,3,vb[1],1);
+	lcd_print(2,5,vb[2],1);
+	lcd_print(2,7,vb[3],1);
 }
 
 void next_box()
 {
+	forward_mm_follow(250);
+	forward_mm(50);
 	while(1)
 	{
-		forward_mm_follow(250);
-		forward_mm(50);
 		straight_forward();
 		read_values();
 		if((Left_white_line>15)||(Right_white_line>15)||(Center_white_line>15))
 		break;
-	}	
-	if(garbage==1)
-	place_garbage();	
+	}
+	line_follow();	
 }
 void pick_next()
 {
+	
 	
 }
 int main(void)
@@ -2531,29 +2662,11 @@ int main(void)
 		}
 	
 	
-	//goto_room();
-	//finding_line();	
-// 	mapping_arena();
-// 	read_values();
-//forward_mm(20);
-	//red_detect();
 	
-// 	blue_detect();
-	after_mapping();
+	//after_mapping();
 	array_form();
-	next_box();
-//line_follow();
-//red_service();
-	//mapping_arena();
-	//inside_room();
-	//green_service();
-	//forward_mm_follow(250);
-	//stop();
-	//_delay_ms(1000);
-	//left_degrees(30);
-      //line_follow_forward();
-	  //line_follow_backward();
-	 //right_side_service();
-//}	
+	//next_box();
+	after_vip_service();
+
 	}
 			
