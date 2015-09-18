@@ -38,12 +38,12 @@ volatile unsigned long int color_detected;
 volatile unsigned long int color;
 long int threshold_value = 1500;
 unsigned int colour_flag;
-int room_color[8];   //array to store the color according to room
+int room_color[8]={4,1,2,4,3,4,2,2};   //array to store the color according to room
 unsigned char buffer[6];
 unsigned char Data_buffer[6];
 unsigned char vip_room=0;
 unsigned char service_to_vip=0;
-int vb[4];
+int vb[4]={3,0,1,2};
 unsigned char vip_room_set;
 unsigned char ir=0;
 unsigned char index;
@@ -1112,7 +1112,29 @@ void line_follow_sense()
 	}
 	stop();
 }	
-
+void d_room()
+{
+	sharp2 = ADC_Conversion(13);
+	value2 = Sharp_GP2D12_estimation(sharp2);
+	sharp1 = ADC_Conversion(9);						//Stores the Analog value of front sharp connected to ADC channel 11 into variable "sharp"
+	value1 = Sharp_GP2D12_estimation(sharp1);
+	
+		while((Left_white_line<15)||(Right_white_line<15)||(Center_white_line<15))
+		{
+			if ((value2 > 200)&&(value1>200))
+			{
+				forward_mm(70);
+				soft_right_degrees(90);
+				read_values();
+			}
+		
+	}
+	
+	
+	
+	
+	
+}
 void line_follow_find()
 {
 	count=0;
@@ -1189,6 +1211,48 @@ void line_follow()
 			forward_mm(10);
 			count+=1;
 			lcd_print(1,1,count,2);
+			break;
+		}
+		if(Center_white_line>threshold_c)
+		{
+			flag=1;
+			forward();
+		}
+		if(Left_white_line>threshold_l && flag == 0)
+		{
+			flag=1;
+			left();
+			while(Center_white_line<threshold_c)
+			Center_white_line=ADC_Conversion(2);
+		}
+		if(Right_white_line>threshold_r && flag == 0)
+		{
+			flag=1;
+			right();
+			while(Center_white_line<threshold_c)
+			Center_white_line=ADC_Conversion(2);
+		}
+		else
+		forward();
+	}
+	stop();
+}
+
+void line_follow_stop()
+{
+	//dynamic();
+	while(1)
+	{
+		flag=0;
+		read_values();
+		sharp1 = ADC_Conversion(9);						//Stores the Analog value of front sharp connected to ADC channel 11 into variable "sharp"
+		value1 = Sharp_GP2D12_estimation(sharp1);
+		sharp2 = ADC_Conversion(13);						//Stores the Analog value of front sharp connected to ADC channel 11 into variable "sharp"
+		value2 = Sharp_GP2D12_estimation(sharp1);
+		if((Center_white_line<20 && Left_white_line<20 && Right_white_line<20 && (value1 < 250 && value1 > 0)))
+		{
+			green_detect();
+			forward_mm(10);
 			break;
 		}
 		if(Center_white_line>threshold_c)
@@ -1645,7 +1709,7 @@ void green_service()
 		count=3;
 	}
 	else
-	{
+	count=1;
 	 if(count==1)
 	 {
 		 forward_mm(50);
@@ -1687,7 +1751,7 @@ void green_service()
 		 //back_mm(30);
 		 line_follow();
 	 }
-	 }	 
+	  
 	 if(count==3)
 	 {
 		 forward_mm(50);
@@ -1781,7 +1845,11 @@ void green_service()
 			 if(CW>=20)
 			 break;
 		 }
-		 line_follow();
+		 if (vb[rst]!=3)
+		 {
+			 line_follow();
+		 }
+		 //line_follow();
 	 }		 
 	 if (count==7)
 	 {
@@ -1805,7 +1873,7 @@ void blue_service()
 		count=2;
 	}
 	else
-	{
+	count = 1;
 	if(count==1)
 	{
 		forward_mm(50);
@@ -1825,7 +1893,6 @@ void blue_service()
 		}
 		//back_mm(30);
 		line_follow();
-	}
 	}	
 	if(count==2)
 	{
@@ -1940,7 +2007,11 @@ void blue_service()
 			if(CW>=20)
 			break;
 		}
-		line_follow();
+		if (vb[rst]!=3)
+		{
+			line_follow();
+		}
+		//line_follow();
 	}
 	if (count==7)
 	{
@@ -1962,8 +2033,10 @@ void red_service(void)
 		place_garbage();
 		count=2;
 	}
-	else	
-	{if(count==1)
+	else
+	count=1;
+		
+		if(count==1)
 	{
 		forward_mm(50);
 		stop();
@@ -1983,7 +2056,7 @@ void red_service(void)
 		//back_mm(30);
 		line_follow();
 	}
-	}	
+	
 	if(count==2)
 	{
 		forward_mm(60);
@@ -2097,7 +2170,11 @@ void red_service(void)
 			if(CW>=20)
 			break;
 		}
-		line_follow();
+		if (vb[rst]!=3)
+		{
+			line_follow();
+		}
+		
 	}
 	if (count==7)
 	{
@@ -2255,13 +2332,17 @@ void inside_room()
 		 line_follow_sense();
 		
 	 }
-		
+		if (vb[rst]==3)
+		{
+			left_degrees(90);
+		}
+		else
 			 right_degrees(90);
 	 			 
 }
 unsigned char vip_room_number(void)
 {
-	for (int i=0;i<3;i++)
+	for (int i=0;i<=3;i++)
 	{
 		if (room_color[2*i]==room_color[((2*i)+1)])
 		{
@@ -2301,6 +2382,16 @@ void service_given_others()
 	{
 		green_service();
 	}
+}
+
+void goto_room1()
+{
+	line_follow_stop();
+	forward_mm(220);
+	soft_right_degrees(100);
+	forward_mm(100);
+	inside_room();
+	next_box();
 }
 void place_garbage()
 {
@@ -2496,7 +2587,7 @@ void service_given_others1()
 	}
 	else
 	ag= room_color[2*vb[rst]];
-	lcd_init();
+	//lcd_init();
 	lcd_print(1,1,ag,1);
 	switch (ag)
 	{
@@ -2564,6 +2655,12 @@ void after_vip_service()
 		left_90();
 		next_box();
 	}
+	if (vb[rst]==3)
+	{
+		service_given_others1();
+		goto_room1();
+		
+	}
 	}	
 }
 void array_form()
@@ -2578,10 +2675,12 @@ void array_form()
 		index++;
 	}
 	
-	lcd_print(2,1,vb[0],1);
-	lcd_print(2,3,vb[1],1);
-	lcd_print(2,5,vb[2],1);
-	lcd_print(2,7,vb[3],1);
+ 	lcd_print(2,1,vb[0],1);
+ 	lcd_print(2,3,vb[1],1);
+ 	lcd_print(2,5,vb[2],1);
+ 	lcd_print(2,7,vb[3],1);
+	 _delay_ms(500);
+	 stop();
 }
 
 void next_box()
@@ -2597,11 +2696,7 @@ void next_box()
 	}
 	line_follow();	
 }
-void pick_next()
-{
-	
-	
-}
+
 int main(void)
 {
     init_devices();
@@ -2653,6 +2748,12 @@ int main(void)
 				if((Left_white_line>15)||(Right_white_line>15)||(Center_white_line>15))
 				break;
 			}
+			stop();
+			_delay_ms(100);
+			left_degrees(20);
+			room_array();
+			right_degrees(20);
+			stop;
 			
 		}			
 			else
